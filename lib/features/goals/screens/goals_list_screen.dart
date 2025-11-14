@@ -1,44 +1,53 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
+import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
+
 import '../app_router.dart';
-import '../models/goal_model.dart';
-import '../services/goal_service.dart';
 import '../widgets/goals_stats_card.dart';
 import '../widgets/goals_search_bar.dart';
 import '../widgets/goals_list_view.dart';
-import 'package:get_it/get_it.dart';
-import '../services/goal_service.dart';
-import 'add_goal_screen.dart';
-import 'completed_goals_screen.dart';
-import 'goal_detail_screen.dart';
-import 'profile_screen.dart';
+import '../stores/goals_list/goals_list_screen_store.dart';
 
-class GoalsListScreen extends StatefulWidget {
-  const GoalsListScreen({super.key});
 
-  @override
-  State<GoalsListScreen> createState() => _GoalsListScreenState();
-}
+class GoalsListScreen extends StatelessWidget {
+  GoalsListScreen({super.key})
+      : store = GetIt.I<GoalsListScreenStore>(),
+        _searchController = TextEditingController() {
+    store.setSearchQuery('');
+    store.refresh();
+  }
 
-class _GoalsListScreenState extends State<GoalsListScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  String _sortBy = 'none';
+  final GoalsListScreenStore store;
+  final TextEditingController _searchController;
 
-  void _deleteGoal(int index) {
+  void _addGoal(BuildContext context) {
+    context.push(Routes.addGoal);
+  }
+
+  void _openCompleted(BuildContext context) {
+    context.push(Routes.completed);
+  }
+
+  void _openProfile(BuildContext context) {
+    context.push(Routes.profile);
+  }
+
+  void _deleteGoal(BuildContext context, int index) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Удалить цель?'),
         content: const Text('Вы уверены, что хотите удалить эту цель?'),
         actions: [
           TextButton(
-            onPressed: () => context.pop(),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Отмена'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
-              setState(() => GetIt.I<GoalService>().deleteGoal(index));
-              Navigator.pop(context);
+              store.deleteByFilteredIndex(index);
+              Navigator.pop(ctx);
             },
             child: const Text('Удалить'),
           ),
@@ -47,16 +56,8 @@ class _GoalsListScreenState extends State<GoalsListScreen> {
     );
   }
 
-  List<Goal> _filteredGoals() {
-    final query = _searchController.text.toLowerCase();
-    return GetIt.I<GoalService>().goals
-        .where((g) => g.title.toLowerCase().contains(query))
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final goals = _filteredGoals();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Менеджер целей'),
@@ -64,53 +65,57 @@ class _GoalsListScreenState extends State<GoalsListScreen> {
           IconButton(
             tooltip: 'Выполненные',
             icon: const Icon(Icons.done_all),
-            onPressed: () {
-              context.push(Routes.completed);
-            },
+            onPressed: () => _openCompleted(context),
           ),
           IconButton(
             tooltip: 'Профиль',
             icon: const Icon(Icons.person),
-            onPressed: () {
-              context.push(Routes.profile);
-            },
+            onPressed: () => _openProfile(context),
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const GoalsStatsCard(),
-            GoalsSearchBar(
-              controller: _searchController,
-              onChanged: () => setState(() {}),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: GoalsListView(
-                goals: goals,
-                onDelete: (index) {
-                  setState(() => GetIt.I<GoalService>().deleteGoal(index));
-                },
-                onTap: (goal) async {
-                  await context.push(Routes.goalDetail, extra: goal);
-                  setState(() {});
-                },
-              ),
-            ),
-          ],
+        child: Observer(
+          builder: (_) {
+            final goals = store.goals;
+
+            return Column(
+              children: [
+                const GoalsStatsCard(),
+                GoalsSearchBar(
+                  controller: _searchController,
+                  onChanged: () {
+                    store.setSearchQuery(_searchController.text);
+                  },
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: goals.isEmpty
+                      ? const Center(child: Text('Целей пока нет'))
+                      : GoalsListView(
+                    goals: goals,
+                    onDelete: (index) => _deleteGoal(context, index),
+                    onTap: (goal) async {
+                      await context.push(
+                        Routes.goalDetail,
+                        extra: goal,
+                      );
+                      // после возврата с экрана деталей обновим список
+                      store.refresh();
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addGoal,
+        onPressed: () => _addGoal(context),
         label: const Text('Новая цель'),
         icon: const Icon(Icons.add),
       ),
     );
-  }
-
-  void _addGoal() {
-    context.push(Routes.addGoal);
   }
 }
