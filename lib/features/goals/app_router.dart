@@ -27,17 +27,17 @@ GoRouter buildRouter() {
       GoRoute(
         path: Routes.addGoal,
         name: 'addGoal',
-        builder: (context, state) => const AddGoalScreen(),
+        builder: (context, state) => AddGoalScreen(),
       ),
       GoRoute(
         path: Routes.profile,
         name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
+        builder: (context, state) => ProfileScreen(),
       ),
       GoRoute(
         path: Routes.completed,
         name: 'completed',
-        builder: (context, state) => const CompletedGoalsScreen(),
+        builder: (context, state) => CompletedGoalsScreen(),
       ),
       GoRoute(
         path: Routes.goalDetail,
