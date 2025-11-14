@@ -1,37 +1,30 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:go_router/go_router.dart';
-import '../app_router.dart';
-import '../models/goal_model.dart';
-import '../services/goal_service.dart';
-import '../widgets/goal_card.dart';
 import 'package:get_it/get_it.dart';
-import '../services/goal_service.dart';
+
+import '../app_router.dart';
+import '../widgets/goal_card.dart';
+import '../stores/completed_goals/completed_goals_screen_store.dart';
 import 'goal_detail_screen.dart';
 
-class CompletedGoalsScreen extends StatefulWidget {
-  const CompletedGoalsScreen({super.key});
+class CompletedGoalsScreen extends StatelessWidget {
+  CompletedGoalsScreen({super.key})
+      : store = GetIt.I<CompletedGoalsScreenStore>();
 
-  @override
-  State<CompletedGoalsScreen> createState() => _CompletedGoalsScreenState();
-}
+  final CompletedGoalsScreenStore store;
 
-class _CompletedGoalsScreenState extends State<CompletedGoalsScreen> {
-  List<MapEntry<int, Goal>> _completedEntries() {
-    return GetIt.I<GoalService>().goals.asMap().entries
-        .where((e) => e.value.isCompleted)
-        .toList();
-  }
-
-  void _deleteAllCompleted() async {
-    final count = _completedEntries().length;
+  Future<void> _deleteAllCompleted(BuildContext context) async {
+    final count = store.completedCount;
     if (count == 0) return;
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Удалить выполненные цели?'),
-        content: Text('Будут удалены $count выполненных целей. Действие необратимо.'),
+        content: Text(
+          'Будут удалены $count выполненных целей. Действие необратимо.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -46,9 +39,7 @@ class _CompletedGoalsScreenState extends State<CompletedGoalsScreen> {
     );
 
     if (ok == true) {
-      setState(() {
-        GetIt.I<GoalService>().goals.removeWhere((g) => g.isCompleted);
-      });
+      store.deleteAllCompleted();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Удалено целей: $count')),
       );
@@ -57,42 +48,50 @@ class _CompletedGoalsScreenState extends State<CompletedGoalsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final entries = _completedEntries();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Выполненные цели'),
         leading: BackButton(onPressed: () => context.pop()),
         actions: [
-          IconButton(
-            tooltip: 'Удалить все',
-            onPressed: entries.isEmpty ? null : _deleteAllCompleted,
-            icon: const Icon(Icons.delete_sweep),
+          Observer(
+            builder: (_) => IconButton(
+              tooltip: 'Удалить все',
+              onPressed:
+              store.hasCompleted ? () => _deleteAllCompleted(context) : null,
+              icon: const Icon(Icons.delete_sweep),
+            ),
           ),
         ],
       ),
-      body: entries.isEmpty
-          ? const _EmptyCompletedState()
-          : ListView.separated(
-        padding: const EdgeInsets.all(12),
-        itemCount: entries.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final originalIndex = entries[i].key;
-          final goal = entries[i].value;
+      body: Observer(
+        builder: (_) {
+          final entries = store.completedGoals;
 
-          return GoalCard(
-            goal: goal,
-            onDelete: () {
-              setState(() => GetIt.I<GoalService>().deleteGoal(originalIndex));
-            },
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => GoalDetailScreen(goal: goal),
-                ),
-              ).then((_) => setState(() {}));
+          if (entries.isEmpty) {
+            return const _EmptyCompletedState();
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(12),
+            itemCount: entries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, i) {
+              final entry = entries[i];
+              final goal = entry.goal;
+              final originalIndex = entry.originalIndex;
+
+              return GoalCard(
+                goal: goal,
+                onDelete: () => store.deleteByOriginalIndex(originalIndex),
+                onTap: () async {
+                  // открываем детали, после возврата обновляем список
+                  await context.push(
+                    Routes.goalDetail,
+                    extra: goal,
+                  );
+                  store.refresh();
+                },
+              );
             },
           );
         },
