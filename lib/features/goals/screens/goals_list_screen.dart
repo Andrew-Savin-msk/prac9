@@ -101,7 +101,6 @@ class GoalsListScreen extends StatelessWidget {
                         Routes.goalDetail,
                         extra: goal,
                       );
-                      // после возврата с экрана деталей обновим список
                       store.refresh();
                     },
                   ),

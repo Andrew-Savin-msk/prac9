@@ -84,7 +84,6 @@ class CompletedGoalsScreen extends StatelessWidget {
                 goal: goal,
                 onDelete: () => store.deleteByOriginalIndex(originalIndex),
                 onTap: () async {
-                  // открываем детали, после возврата обновляем список
                   await context.push(
                     Routes.goalDetail,
                     extra: goal,

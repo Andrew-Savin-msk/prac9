@@ -68,7 +68,6 @@ class ProfileScreen extends StatelessWidget {
                   color: a.isUnlocked ? Colors.green : null,
                 ),
                 onTap: () {
-                  // здесь потом можно добавить действие по тапу по ачивке
                 },
               );
             },

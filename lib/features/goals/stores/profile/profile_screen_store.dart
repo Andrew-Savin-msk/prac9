@@ -81,7 +81,6 @@ abstract class _ProfileScreenStore with Store {
     achievements = ObservableList.of(_service.getAchievements());
   }
 
-  /// На будущее, если захочешь перезагружать список.
   @action
   void refresh() => _loadAchievements();
 }

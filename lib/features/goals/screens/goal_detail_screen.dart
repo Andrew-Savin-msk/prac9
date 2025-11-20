@@ -11,7 +11,6 @@ class GoalDetailScreen extends StatelessWidget {
   GoalDetailScreen({super.key, required this.goal})
       : _subtaskController = TextEditingController(),
         store = GetIt.I<GoalDetailScreenStore>() {
-    // при каждом создании экрана "подключаем" нужную цель к глобальному стору
     store.attachGoal(goal);
   }
 
@@ -29,8 +28,6 @@ class GoalDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // заголовок можно брать из переданного goal –
-        // он тот же, что и в store.currentGoal
         title: Text(goal.title),
         leading: BackButton(onPressed: () => context.pop()),
       ),
@@ -42,7 +39,6 @@ class GoalDetailScreen extends StatelessWidget {
 
             return Column(
               children: [
-                // прогресс уже считается в сторе
                 ProgressText(progress: store.progress),
                 const Divider(),
                 TextField(

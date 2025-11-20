@@ -10,7 +10,6 @@ class AddGoalScreen extends StatelessWidget {
   AddGoalScreen({super.key})
       : store = GetIt.I<AddGoalScreenStore>(),
         _formKey = GlobalKey<FormState>() {
-    // каждый раз при открытии экрана очищаем форму
     store.clear();
   }
 

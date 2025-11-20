@@ -30,15 +30,12 @@ abstract class _AddGoalScreenStore with Store {
     deadline = value;
   }
 
-  /// Сбрасываем состояние стора, чтобы каждый раз
-  /// при открытии экрана форма была чистая.
   @action
   void clear() {
     title = '';
     deadline = null;
   }
 
-  /// Создаёт цель и кладёт её в сервис.
   @action
   void createGoal() {
     if (!canSave) return;
@@ -50,7 +47,6 @@ abstract class _AddGoalScreenStore with Store {
 
     _goalService.addGoal(goal);
 
-    // после создания можно очистить форму
     clear();
   }
 }

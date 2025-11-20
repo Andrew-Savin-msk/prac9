@@ -10,11 +10,9 @@ class GoalDetailScreenStore = _GoalDetailScreenStore
 abstract class _GoalDetailScreenStore with Store {
   _GoalDetailScreenStore();
 
-  /// Текущая цель, для которой открыт экран деталей
   @observable
   Goal? currentGoal;
 
-  /// Подзадачи текущей цели
   @observable
   ObservableList<Subtask> subtasks = ObservableList<Subtask>();
 
@@ -48,8 +46,6 @@ abstract class _GoalDetailScreenStore with Store {
     final old = subtasks[index];
     final updated = Subtask(title: old.title, done: done);
 
-    // ВАЖНО: именно присваиваем элемент списку,
-    // чтобы MobX увидел изменение
     subtasks[index] = updated;
 
     _syncBackToGoal();
@@ -59,7 +55,6 @@ abstract class _GoalDetailScreenStore with Store {
     final goal = currentGoal;
     if (goal == null) return;
 
-    // синхронизируем список подзадач обратно в модель
     goal.subtasks = subtasks.toList();
   }
 }
